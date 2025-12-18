@@ -28,11 +28,22 @@ public class VansahConfig {
     }
 
     public String getVansahToken() {
+        // Official guide often uses CONNECT_DEMO_TOKEN; keep backwards-compat with VANSAH_TOKEN
+        String connectToken = getEnv("CONNECT_DEMO_TOKEN");
+        if (connectToken != null && !connectToken.isEmpty()) return connectToken;
         return getEnv("VANSAH_TOKEN");
     }
 
     public String getVansahApiUrl() {
-        return getEnv("VANSAH_API_URL", "https://api.vansah.net");
+        // Official binding defaults to https://prod.vansah.com and builds /api/v1/... endpoints on top.
+        // Keep backwards-compat with older VANSAH_API_URL config key.
+        String vansahUrl = getEnv("VANSAH_URL");
+        if (vansahUrl != null && !vansahUrl.isEmpty()) return vansahUrl;
+        return getEnv("VANSAH_API_URL", "https://prod.vansah.com");
+    }
+
+    public String getProjectKey() {
+        return getEnv("VANSAH_PROJECT_KEY", getEnv("PROJECT_KEY"));
     }
 
     public String getJiraIssueKey() {

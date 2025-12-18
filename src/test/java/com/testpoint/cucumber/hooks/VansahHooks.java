@@ -1,93 +1,58 @@
 package com.testpoint.cucumber.hooks;
 
-import com.testpoint.vansah.VansahNode;
 import com.testpoint.vansah.config.VansahConfig;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.Scenario;
+import com.vansah.VansahNode;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import io.cucumber.java.After;
+import io.cucumber.java.Scenario;
 
 /**
  * Cucumber hooks for integrating test execution with Vansah.
- * These hooks automatically create test runs and log results to Vansah.
+ * Minimal showcase: sends ONE result per scenario using Vansah "quick test" methods.
  */
 public class VansahHooks {
     private static VansahNode vansahNode;
-    private static Map<String, String> scenarioTestRunMap = new HashMap<>();
-    private static VansahConfig config = VansahConfig.getInstance();
-
-    @Before
-    public void beforeScenario(Scenario scenario) {
-        try {
-            if (vansahNode == null) {
-                vansahNode = new VansahNode();
-                vansahNode.setVansahToken(config.getVansahToken());
-                vansahNode.setVansahApiUrl(config.getVansahApiUrl());
-
-                // Set optional configurations if available
-                String jiraIssueKey = config.getJiraIssueKey();
-                if (jiraIssueKey != null && !jiraIssueKey.isEmpty()) {
-                    vansahNode.setJIRA_ISSUE_KEY(jiraIssueKey);
-                }
-
-                String testFolderPath = config.getTestFolderPath();
-                if (testFolderPath != null && !testFolderPath.isEmpty()) {
-                    vansahNode.setTESTFOLDER_PATH(testFolderPath);
-                }
-
-                String advancedTestPlanKey = config.getAdvancedTestPlanKey();
-                if (advancedTestPlanKey != null && !advancedTestPlanKey.isEmpty()) {
-                    vansahNode.setAdvancedTestPlanKey(advancedTestPlanKey);
-                }
-
-                String standardTestPlanKey = config.getStandardTestPlanKey();
-                if (standardTestPlanKey != null && !standardTestPlanKey.isEmpty()) {
-                    vansahNode.setStandardTestPlanKey(standardTestPlanKey);
-                }
-            }
-
-            // Extract test case key from scenario tags or name
-            String testCaseKey = extractTestCaseKey(scenario);
-            if (testCaseKey != null && !testCaseKey.isEmpty()) {
-                createTestRun(testCaseKey);
-                scenarioTestRunMap.put(scenario.getId(), testCaseKey);
-            }
-        } catch (Exception e) {
-            System.err.println("Error in Vansah before hook: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
+    private static final VansahConfig config = VansahConfig.getInstance();
 
     @After
     public void afterScenario(Scenario scenario) {
         try {
-            String testCaseKey = scenarioTestRunMap.get(scenario.getId());
-            if (testCaseKey != null && vansahNode != null && vansahNode.getCurrentTestRunId() != null) {
-                // Log overall scenario result
-                String result = scenario.isFailed() ? "FAILED" : "PASSED";
-                String comment = scenario.isFailed() 
-                    ? "Scenario failed: " + scenario.getName() 
-                    : "Scenario passed: " + scenario.getName();
+            ensureVansahConfigured();
 
-                // Log error details if scenario failed
-                if (scenario.isFailed() && scenario.getError() != null) {
-                    comment += "\nError: " + scenario.getError().getMessage();
-                }
+            String testCaseKey = extractTestCaseKey(scenario);
+            if (testCaseKey == null || testCaseKey.isEmpty()) return;
 
-                // Log screenshot if available
-                File screenshot = null;
-                if (scenario.isFailed() && scenario.attach != null) {
-                    // Screenshot handling would be done here if needed
-                }
+            int resultCode = scenario.isFailed() ? 1 : 2; // 1=FAIL, 2=PASS (per guida binding)
 
-                vansahNode.addTestLog(result, comment, 1, screenshot);
+            // Prefer "folder path" integration for this showcase; fallback to Jira issue if provided.
+            String testFolderPath = config.getTestFolderPath();
+            String jiraIssueKey = config.getJiraIssueKey();
+
+            if (testFolderPath != null && !testFolderPath.isEmpty()) {
+                vansahNode.addQuickTestFromTestFolders(testCaseKey, resultCode);
+                return;
+            }
+
+            if (jiraIssueKey != null && !jiraIssueKey.isEmpty()) {
+                // Note: addQuickTestFromJiraIssue uses the issue context inside Vansah (see official binding).
+                vansahNode.addQuickTestFromJiraIssue(testCaseKey, resultCode);
             }
         } catch (Exception e) {
             System.err.println("Error in Vansah after hook: " + e.getMessage());
-            e.printStackTrace();
+        }
+    }
+
+    private static void ensureVansahConfigured() {
+        if (vansahNode != null) return;
+        vansahNode = new VansahNode();
+
+        VansahNode.setVansahToken(config.getVansahToken());
+        VansahNode.setVansahURL(config.getVansahApiUrl());
+        VansahNode.setProjectKey(config.getProjectKey());
+
+        String testFolderPath = config.getTestFolderPath();
+        if (testFolderPath != null && !testFolderPath.isEmpty()) {
+            vansahNode.setFOLDERPATH(testFolderPath);
         }
     }
 
@@ -105,51 +70,7 @@ public class VansahHooks {
             }
         }
 
-        // If no tag found, try to extract from scenario name
-        String scenarioName = scenario.getName();
-        // Look for pattern like "TC-PROJ-123" or "PROJ-123" in name
-        if (scenarioName != null) {
-            String[] parts = scenarioName.split("\\s+");
-            for (String part : parts) {
-                if (part.matches("^[A-Z]+-\\d+$")) {
-                    return part;
-                }
-            }
-        }
-
         return null;
-    }
-
-    /**
-     * Creates a test run in Vansah based on configuration.
-     */
-    private void createTestRun(String testCaseKey) throws Exception {
-        String advancedTestPlanKey = config.getAdvancedTestPlanKey();
-        String standardTestPlanKey = config.getStandardTestPlanKey();
-        String testFolderPath = config.getTestFolderPath();
-        String jiraIssueKey = config.getJiraIssueKey();
-
-        if (advancedTestPlanKey != null && !advancedTestPlanKey.isEmpty()) {
-            // Determine asset type based on available configuration
-            String assetType = (testFolderPath != null && !testFolderPath.isEmpty()) ? "folder" : "issue";
-            vansahNode.addTestRunFromAdvancedTestPlan(assetType, testCaseKey);
-        } else if (standardTestPlanKey != null && !standardTestPlanKey.isEmpty()) {
-            vansahNode.addTestRunFromStandardTestPlan(testCaseKey);
-        } else if (testFolderPath != null && !testFolderPath.isEmpty()) {
-            vansahNode.addTestRunFromTestFolder(testCaseKey);
-        } else if (jiraIssueKey != null && !jiraIssueKey.isEmpty()) {
-            vansahNode.addTestRunFromJIRAIssue(testCaseKey);
-        } else {
-            // Default to JIRA Issue if no specific configuration
-            vansahNode.addTestRunFromJIRAIssue(testCaseKey);
-        }
-    }
-
-    /**
-     * Gets the VansahNode instance for use in step definitions.
-     */
-    public static VansahNode getVansahNode() {
-        return vansahNode;
     }
 }
 

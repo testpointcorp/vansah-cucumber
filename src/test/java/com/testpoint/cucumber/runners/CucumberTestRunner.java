@@ -13,9 +13,9 @@ import org.junit.runner.RunWith;
         glue = {"com.testpoint.cucumber.steps", "com.testpoint.cucumber.hooks"},
         plugin = {
                 "pretty",
-                "html:target/cucumber-reports",
-                "json:target/cucumber-reports/Cucumber.json",
-                "junit:target/cucumber-reports/Cucumber.xml"
+                "html:target/cucumber-reports/cucumber.html",
+                "json:target/cucumber-reports/cucumber.json",
+                "junit:target/cucumber-reports/cucumber.xml"
         },
         monochrome = true,
         tags = "@Vansah"
