@@ -20,7 +20,7 @@ Minimal example of integrating Cucumber with Vansah using the official Java bind
 src/
 ├── main/java/com/testpoint/vansah/config/VansahConfig.java
 └── test/
-    ├── java/com/vansah/VansahNode.java                 # binding ufficiale (copiato dal repo)
+    ├── java/com/vansah/VansahNode.java
     ├── java/com/testpoint/cucumber/hooks/VansahHooks.java
     ├── java/com/testpoint/cucumber/runners/CucumberTestRunner.java
     ├── java/com/testpoint/cucumber/steps/ExampleSteps.java
