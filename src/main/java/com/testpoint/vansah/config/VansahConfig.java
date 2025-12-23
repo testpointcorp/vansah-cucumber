@@ -4,7 +4,24 @@ import io.github.cdimascio.dotenv.Dotenv;
 
 /**
  * Configuration class for Vansah integration.
- * Loads configuration from .env file.
+ * Loads configuration from .env file or environment variables.
+ * 
+ * Required:
+ * - CONNECT_DEMO_TOKEN or VANSAH_TOKEN: API authentication token
+ * - VANSAH_PROJECT_KEY or PROJECT_KEY: Jira project key
+ * 
+ * Integration context (at least one required):
+ * - TEST_FOLDER_PATH: Test folder path in Vansah
+ * - JIRA_ISSUE_KEY: Jira issue to link test runs
+ * - ADVANCED_TEST_PLAN_KEY: Advanced Test Plan key
+ * - STANDARD_TEST_PLAN_KEY: Standard Test Plan key
+ * 
+ * Optional features:
+ * - STEP_LEVEL_REPORTING: Enable per-step reporting (true/false)
+ * - SCREENSHOT_ON_FAILURE: Capture screenshots on failure (true/false)
+ * - SPRINT_NAME: Sprint name for test run properties
+ * - RELEASE_NAME: Release/version name
+ * - ENVIRONMENT_NAME: Environment name (e.g., "UAT", "SYS")
  */
 public class VansahConfig {
     private static Dotenv dotenv;
@@ -27,16 +44,15 @@ public class VansahConfig {
         return instance;
     }
 
+    // ==================== Core Configuration ====================
+
     public String getVansahToken() {
-        // Official guide often uses CONNECT_DEMO_TOKEN; keep backwards-compat with VANSAH_TOKEN
         String connectToken = getEnv("CONNECT_DEMO_TOKEN");
         if (connectToken != null && !connectToken.isEmpty()) return connectToken;
         return getEnv("VANSAH_TOKEN");
     }
 
     public String getVansahApiUrl() {
-        // Official binding defaults to https://prod.vansah.com and builds /api/v1/... endpoints on top.
-        // Keep backwards-compat with older VANSAH_API_URL config key.
         String vansahUrl = getEnv("VANSAH_URL");
         if (vansahUrl != null && !vansahUrl.isEmpty()) return vansahUrl;
         return getEnv("VANSAH_API_URL", "https://prod.vansah.com");
@@ -45,6 +61,8 @@ public class VansahConfig {
     public String getProjectKey() {
         return getEnv("VANSAH_PROJECT_KEY", getEnv("PROJECT_KEY"));
     }
+
+    // ==================== Integration Context ====================
 
     public String getJiraIssueKey() {
         return getEnv("JIRA_ISSUE_KEY");
@@ -61,6 +79,51 @@ public class VansahConfig {
     public String getStandardTestPlanKey() {
         return getEnv("STANDARD_TEST_PLAN_KEY");
     }
+
+    // ==================== Feature Flags ====================
+
+    /**
+     * Enable step-level reporting (sends result for each step, not just scenario).
+     * Default: false (quick test mode - one result per scenario)
+     */
+    public boolean isStepLevelReportingEnabled() {
+        String value = getEnv("STEP_LEVEL_REPORTING", "false");
+        return "true".equalsIgnoreCase(value) || "1".equals(value);
+    }
+
+    /**
+     * Enable automatic screenshot capture on step/scenario failure.
+     * Default: false
+     */
+    public boolean isScreenshotOnFailureEnabled() {
+        String value = getEnv("SCREENSHOT_ON_FAILURE", "false");
+        return "true".equalsIgnoreCase(value) || "1".equals(value);
+    }
+
+    // ==================== Test Run Properties ====================
+
+    /**
+     * Sprint name to associate with test runs.
+     */
+    public String getSprintName() {
+        return getEnv("SPRINT_NAME");
+    }
+
+    /**
+     * Release/version name to associate with test runs.
+     */
+    public String getReleaseName() {
+        return getEnv("RELEASE_NAME");
+    }
+
+    /**
+     * Environment name (e.g., "UAT", "SYS", "PROD") to associate with test runs.
+     */
+    public String getEnvironmentName() {
+        return getEnv("ENVIRONMENT_NAME");
+    }
+
+    // ==================== Helper Methods ====================
 
     private String getEnv(String key) {
         return getEnv(key, null);
@@ -80,4 +143,3 @@ public class VansahConfig {
         return defaultValue;
     }
 }
-
