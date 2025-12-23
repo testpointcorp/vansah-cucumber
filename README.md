@@ -18,9 +18,8 @@
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
-- [Usage](#usage)
+- [Usage Examples](#usage-examples)
 - [Reporting Modes](#reporting-modes)
-- [Feature File Example](#feature-file-example)
 - [Project Structure](#project-structure)
 - [Methods Overview](#methods-overview)
 - [Troubleshooting](#troubleshooting)
@@ -87,24 +86,189 @@ mvn clean test
 | `RELEASE_NAME` | Release/version name |
 | `ENVIRONMENT_NAME` | Environment (e.g., "UAT", "PROD") |
 
-## Usage
+## Usage Examples
 
-### Run all tests
+### Running Cucumber Tests with Vansah Integration
+
+This integration automatically sends test results to Vansah when you run your Cucumber tests. The `VansahHooks` class handles all communication with the Vansah API.
+
+* **Quick Test Mode using Test Folder Path**
+
+```java
+// .env configuration
+CONNECT_DEMO_TOKEN=your_vansah_token_here
+VANSAH_PROJECT_KEY=PROJ
+TEST_FOLDER_PATH=Automation/Cucumber
+```
+
+```gherkin
+@Vansah
+Feature: Login Feature
+
+  @TC-PROJ-C1
+  Scenario: Successful login
+    Given I am on the login page
+    When I enter valid credentials
+    Then I should see the dashboard
+```
 
 ```bash
+# Run the test - results automatically sent to Vansah
 mvn clean test
 ```
 
-### Run specific scenario by tag
-
-```bash
-mvn test -Dcucumber.filter.tags="@TC-PROJ-C1"
+**Console Output:**
+```
+✅ Quick test result sent: PASSED
 ```
 
-### Enable step-level reporting
+* **Step-Level Reporting Mode**
+
+Enable step-level reporting to send individual results for each Cucumber step:
+
+```java
+// .env configuration
+CONNECT_DEMO_TOKEN=your_vansah_token_here
+VANSAH_PROJECT_KEY=PROJ
+TEST_FOLDER_PATH=Automation/Cucumber
+STEP_LEVEL_REPORTING=true
+SCREENSHOT_ON_FAILURE=true
+```
 
 ```bash
+# Run with step-level reporting enabled
 STEP_LEVEL_REPORTING=true mvn clean test
+```
+
+**Console Output:**
+```
+🚀 Test run created (Test Folder: Automation/Cucumber)
+📝 Step 1 logged: PASSED
+📝 Step 2 logged: PASSED
+📝 Step 3 logged: FAILED
+📸 Screenshot attached for step 3
+✅ Scenario completed: FAILED (steps logged individually)
+```
+
+* **Sending Results using Advanced Test Plan (ATP)**
+
+```java
+// .env configuration
+CONNECT_DEMO_TOKEN=your_vansah_token_here
+VANSAH_PROJECT_KEY=PROJ
+ADVANCED_TEST_PLAN_KEY=PROJ-P17
+TEST_FOLDER_PATH=Automation/Cucumber
+```
+
+```gherkin
+@Vansah
+Feature: Regression Tests
+
+  @TC-PROJ-C5
+  Scenario: Verify user profile
+    Given I am logged in
+    When I navigate to profile
+    Then I should see my details
+```
+
+**Console Output:**
+```
+🚀 Test run created (Advanced Test Plan: PROJ-P17)
+✅ Quick test result sent: PASSED
+```
+
+* **Sending Results using Standard Test Plan (STP)**
+
+```java
+// .env configuration
+CONNECT_DEMO_TOKEN=your_vansah_token_here
+VANSAH_PROJECT_KEY=PROJ
+STANDARD_TEST_PLAN_KEY=PROJ-P18
+```
+
+```gherkin
+@Vansah
+Feature: Smoke Tests
+
+  @TC-PROJ-C10
+  Scenario: Verify homepage loads
+    Given I open the browser
+    When I navigate to homepage
+    Then I should see the welcome message
+```
+
+**Console Output:**
+```
+🚀 Test run created (Standard Test Plan: PROJ-P18)
+✅ Quick test result sent: PASSED
+```
+
+* **Sending Results linked to a Jira Issue**
+
+```java
+// .env configuration
+CONNECT_DEMO_TOKEN=your_vansah_token_here
+VANSAH_PROJECT_KEY=PROJ
+JIRA_ISSUE_KEY=PROJ-123
+```
+
+```gherkin
+@Vansah
+Feature: Bug Verification
+
+  @TC-PROJ-C15
+  Scenario: Verify bug fix for PROJ-123
+    Given the bug has been fixed
+    When I perform the failing action
+    Then the issue should be resolved
+```
+
+**Console Output:**
+```
+🚀 Test run created (Jira Issue: PROJ-123)
+✅ Quick test result sent: PASSED
+```
+
+* **Complete Example with Test Run Properties**
+
+```java
+// .env configuration
+CONNECT_DEMO_TOKEN=your_vansah_token_here
+VANSAH_PROJECT_KEY=PROJ
+TEST_FOLDER_PATH=Automation/Cucumber
+SPRINT_NAME=Sprint 5
+RELEASE_NAME=v2.1.0
+ENVIRONMENT_NAME=UAT
+STEP_LEVEL_REPORTING=true
+```
+
+```gherkin
+@Vansah
+Feature: E2E Payment Flow
+
+  @TC-PROJ-C20
+  Scenario: Complete purchase flow
+    Given I have items in my cart
+    When I proceed to checkout
+    And I enter payment details
+    And I confirm the order
+    Then I should see order confirmation
+```
+
+### Running Tests
+
+```bash
+# Run all Vansah-tagged tests
+mvn clean test
+
+# Run specific scenario by tag
+mvn test -Dcucumber.filter.tags="@TC-PROJ-C1"
+
+# Run with step-level reporting
+STEP_LEVEL_REPORTING=true mvn clean test
+
+# Run with environment variables
+CONNECT_DEMO_TOKEN=xxx VANSAH_PROJECT_KEY=PROJ mvn clean test
 ```
 
 ## Reporting Modes
@@ -140,25 +304,6 @@ When multiple integration contexts are configured, the priority is:
 2. **Standard Test Plan**
 3. **Test Folder**
 4. **Jira Issue**
-
-## Feature File Example
-
-```gherkin
-@Vansah
-Feature: Example Feature for Vansah Integration
-
-  @TC-PROJ-C1
-  Scenario: Successful test scenario
-    Given I have a test scenario
-    When I perform an action
-    Then I verify the result
-
-  @TC-PROJ-C2
-  Scenario: Another test scenario
-    Given I have another scenario
-    When I perform a different action
-    Then I verify the different result
-```
 
 ## Project Structure
 
