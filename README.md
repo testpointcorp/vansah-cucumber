@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://vansah.com/wp-content/uploads/2024/05/vansah-logo-new-blue.svg" alt="Vansah Logo" width="300"/>
+  <img src="https://vansah.com/app/logo/vansahjira-logo.svg" alt="Vansah Logo" width="300"/>
 </p>
 
 <p align="center">
