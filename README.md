@@ -1,32 +1,58 @@
-# Vansah Cucumber Java
+<p align="center">
+  <img src="https://vansah.com/wp-content/uploads/2024/05/vansah-logo-new-blue.svg" alt="Vansah Logo" width="300"/>
+</p>
 
-Complete integration of Cucumber with Vansah Test Management using the official Java binding `VansahNode` from: [testpointcorp/Vansah-API-Binding-Java](https://github.com/testpointcorp/Vansah-API-Binding-Java).
+<p align="center">
+  The "Vansah Cucumber Java" integration enables seamless Cucumber test execution with automatic result reporting to Vansah Test Management for Jira, using the official Java binding <code>VansahNode</code> from: <a href="https://github.com/testpointcorp/Vansah-API-Binding-Java">testpointcorp/Vansah-API-Binding-Java</a>.
+</p>
+
+<p align="center">
+  <a href="https://vansah.com"><strong>Website</strong></a> • <a href="https://vansah.com/connect-integrations/"><strong>More Connect Integrations</strong></a>
+</p>
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Reporting Modes](#reporting-modes)
+- [Feature File Example](#feature-file-example)
+- [Project Structure](#project-structure)
+- [Methods Overview](#methods-overview)
+- [Troubleshooting](#troubleshooting)
 
 ## Features
 
-| Feature | Description |
-|---------|-------------|
-| **Quick Test Mode** | One result per scenario (default) |
-| **Step-Level Reporting** | Detailed results for each Cucumber step |
-| **Screenshot on Failure** | Automatic screenshot capture when steps fail |
-| **Test Folder Integration** | Link tests to Vansah test folders |
-| **Jira Issue Integration** | Link tests to Jira issues |
-| **Advanced Test Plan** | Execute tests within Advanced Test Plans |
-| **Standard Test Plan** | Execute tests within Standard Test Plans |
-| **Test Run Properties** | Attach Sprint, Release, Environment metadata |
+- **Quick Test Mode** – Send one result per Cucumber scenario (default behavior).
+- **Step-Level Reporting** – Send detailed results for each individual Cucumber step.
+- **Screenshot on Failure** – Automatically capture and attach screenshots when steps fail.
+- **Test Folder Integration** – Link test executions to Vansah test folders.
+- **Jira Issue Integration** – Link test executions to Jira issues.
+- **Advanced Test Plan Support** – Execute tests within Advanced Test Plans (ATP).
+- **Standard Test Plan Support** – Execute tests within Standard Test Plans (STP).
+- **Test Run Properties** – Attach Sprint, Release, and Environment metadata to test runs.
+- **Real-Time Sync** – Results are sent immediately as tests execute, not in batch.
 
 ## Prerequisites
 
-- Java JDK 8+
-- Maven 3.6+
-- Vansah installed in your Jira workspace
-- A Vansah Connect token
+- Make sure that **Vansah** is installed in your Jira workspace.
+- You need to generate a **Vansah Connect token** to authenticate with Vansah APIs.
+- Your project requires **Java JDK 8** or newer.
+- **Maven 3.6+** for dependency management and test execution.
 
 ## Quick Start
 
-1. Copy `.env.example` to `.env` and configure your values
-2. Tag your scenarios with `@TC-{testCaseKey}` (e.g., `@TC-PROJ-C1`)
-3. Run tests: `mvn clean test`
+1. Copy `.env.example` to `.env` and configure your values.
+2. Tag your Cucumber scenarios with `@TC-{testCaseKey}` (e.g., `@TC-PROJ-C1`).
+3. Run tests:
+
+```bash
+mvn clean test
+```
 
 ## Configuration
 
@@ -106,7 +132,7 @@ Enable with `STEP_LEVEL_REPORTING=true`:
 ✅ Scenario completed: FAILED (steps logged individually)
 ```
 
-## Integration Priority
+### Integration Priority
 
 When multiple integration contexts are configured, the priority is:
 
@@ -139,19 +165,21 @@ Feature: Example Feature for Vansah Integration
 ```
 src/
 ├── main/java/com/testpoint/vansah/config/
-│   └── VansahConfig.java          # Configuration loader
+│   └── VansahConfig.java              # Configuration loader
 └── test/
     ├── java/com/vansah/
-    │   └── VansahNode.java        # Official Vansah binding
+    │   └── VansahNode.java            # Official Vansah binding
     ├── java/com/testpoint/cucumber/
-    │   ├── hooks/VansahHooks.java # Cucumber hooks for Vansah
+    │   ├── hooks/VansahHooks.java     # Cucumber hooks for Vansah
     │   ├── runners/CucumberTestRunner.java
     │   └── steps/ExampleSteps.java
     └── resources/features/
         └── example.feature
 ```
 
-## Available VansahNode Methods
+## Methods Overview
+
+The `VansahNode` class provides a comprehensive interface for interacting with Vansah Test Management for Jira. Below is an overview of the key methods used in this integration.
 
 ### Test Run Creation
 
@@ -162,12 +190,12 @@ src/
 | `addTestRunFromAdvancedTestPlan(assetType, testCase)` | Create run in Advanced Test Plan |
 | `addTestRunFromStandardTestPlan(testCase)` | Create run in Standard Test Plan |
 
-### Quick Tests (single result per scenario)
+### Quick Tests
 
 | Method | Description |
 |--------|-------------|
-| `addQuickTestFromTestFolders(testCase, result)` | Quick test with folder |
-| `addQuickTestFromJiraIssue(testCase, result)` | Quick test with Jira issue |
+| `addQuickTestFromTestFolders(testCase, result)` | Quick test with folder context |
+| `addQuickTestFromJiraIssue(testCase, result)` | Quick test with Jira issue context |
 
 ### Step-Level Logging
 
@@ -175,6 +203,8 @@ src/
 |--------|-------------|
 | `addTestLog(result, comment, stepRow)` | Log step result |
 | `addTestLog(result, comment, stepRow, screenshot)` | Log step with screenshot |
+| `updateTestLog(result, comment)` | Update existing test log |
+| `updateTestLog(result, comment, screenshot)` | Update test log with screenshot |
 
 ### Result Codes
 
@@ -184,6 +214,21 @@ src/
 | 1 | FAILED |
 | 2 | PASSED |
 | 3 | UNTESTED |
+
+### Setter Methods
+
+| Method | Description |
+|--------|-------------|
+| `setVansahToken(token)` | Set API authentication token |
+| `setVansahURL(url)` | Set custom Vansah API URL |
+| `setProjectKey(key)` | Set Jira project key |
+| `setFOLDERPATH(path)` | Set test folder path |
+| `setJIRA_ISSUE_KEY(key)` | Set Jira issue key |
+| `setSPRINT_NAME(name)` | Set sprint name |
+| `setRELEASE_NAME(name)` | Set release name |
+| `setENVIRONMENT_NAME(name)` | Set environment name |
+| `setAdvancedTestPlanKey(key)` | Set Advanced Test Plan key |
+| `setStandardTestPlanKey(key)` | Set Standard Test Plan key |
 
 ## Troubleshooting
 
@@ -204,6 +249,8 @@ Folder paths must:
 - NOT start with `/`
 - Contain at least one `/` (e.g., "Root/Subfolder")
 
-## License
+---
 
-This project is provided as an example showcase of a Cucumber ↔ Vansah integration.
+## Developed By
+
+[Vansah](https://vansah.com)
