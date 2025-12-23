@@ -1,4 +1,4 @@
-# Vansah Cucumber Integration
+# Vansah Cucumber Java
 
 Complete integration of Cucumber with Vansah Test Management using the official Java binding `VansahNode` from: [testpointcorp/Vansah-API-Binding-Java](https://github.com/testpointcorp/Vansah-API-Binding-Java).
 
