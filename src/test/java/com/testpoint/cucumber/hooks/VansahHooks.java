@@ -288,7 +288,10 @@ public class VansahHooks {
 
     /**
      * Extracts test case key from scenario tags.
-     * Looks for tags starting with @TC- or @TESTCASE-
+     * Supports multiple formats:
+     * - @TC-PROJ-C1 → PROJ-C1
+     * - @TESTCASE-PROJ-C1 → PROJ-C1
+     * - @PROJ-C1 → PROJ-C1 (direct test case key format)
      */
     private String extractTestCaseKey(Scenario scenario) {
         for (String tag : scenario.getSourceTagNames()) {
@@ -296,6 +299,9 @@ public class VansahHooks {
                 return tag.substring(4);
             } else if (tag.startsWith("@TESTCASE-")) {
                 return tag.substring(10);
+            } else if (tag.matches("@[A-Z]+-C\\d+")) {
+                // Direct test case key format: @PROJ-C1, @TD-C1, etc.
+                return tag.substring(1);
             }
         }
         return null;

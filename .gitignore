@@ -36,9 +36,6 @@ buildNumber.properties
 .settings/
 bin/
 
-# Environment variables
-.env
-.env.local
 
 # OS
 .DS_Store
@@ -48,4 +45,8 @@ Thumbs.db
 screenshots/
 *.png
 *.jpg
+
+# Environment variables
+.env
+.env.local
 

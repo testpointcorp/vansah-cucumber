@@ -1,6 +1,6 @@
 Feature: Example Feature for Vansah Integration
 
-  @Vansah @TC-TD-C1
+  @Vansah @TD-C1
   Scenario: Successful test scenario
     Given I have a test scenario
     When I perform an action
