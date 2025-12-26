@@ -1,25 +1,28 @@
 package com.testpoint.cucumber.runners;
 
-import io.cucumber.junit.Cucumber;
-import io.cucumber.junit.CucumberOptions;
 import org.junit.runner.RunWith;
 
+import io.cucumber.junit.Cucumber;
+import io.cucumber.junit.CucumberOptions;
+
 /**
- * Cucumber Test Runner for executing feature files.
+ * Cucumber Test Runner - Generates JSON report for Vansah import.
+ * 
+ * Workflow (Xray-style):
+ * 1. Run: mvn test
+ * 2. Import: npx vansah-cucumber-import -r target/cucumber-reports/cucumber.json [options]
  */
 @RunWith(Cucumber.class)
 @CucumberOptions(
         features = "src/test/resources/features",
-        glue = {"com.testpoint.cucumber.steps", "com.testpoint.cucumber.hooks"},
+        glue = {"com.testpoint.cucumber.steps"},
         plugin = {
                 "pretty",
                 "html:target/cucumber-reports/cucumber.html",
                 "json:target/cucumber-reports/cucumber.json",
                 "junit:target/cucumber-reports/cucumber.xml"
         },
-        monochrome = true,
-        tags = "@Vansah"
+        monochrome = true
 )
 public class CucumberTestRunner {
 }
-

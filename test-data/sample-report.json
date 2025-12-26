@@ -1,0 +1,108 @@
+[
+  {
+    "line": 1,
+    "name": "User Authentication",
+    "description": "Test user login flows",
+    "id": "user-authentication",
+    "keyword": "Feature",
+    "uri": "file:src/test/resources/features/authentication.feature",
+    "tags": [],
+    "elements": [
+      {
+        "line": 4,
+        "name": "Successful login with valid credentials",
+        "description": "",
+        "id": "user-authentication;successful-login",
+        "type": "scenario",
+        "keyword": "Scenario",
+        "start_timestamp": "2025-12-27T10:00:00.000Z",
+        "tags": [
+          {"name": "@smoke"},
+          {"name": "@TC-PROJ-C1"}
+        ],
+        "steps": [
+          {
+            "line": 5,
+            "name": "I am on the login page",
+            "keyword": "Given ",
+            "result": {
+              "duration": 1234567,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.example.steps.LoginSteps.iAmOnLoginPage()"
+            }
+          },
+          {
+            "line": 6,
+            "name": "I enter valid credentials",
+            "keyword": "When ",
+            "result": {
+              "duration": 2345678,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.example.steps.LoginSteps.iEnterCredentials()"
+            }
+          },
+          {
+            "line": 7,
+            "name": "I should see the dashboard",
+            "keyword": "Then ",
+            "result": {
+              "duration": 1456789,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.example.steps.LoginSteps.iShouldSeeDashboard()"
+            }
+          }
+        ]
+      },
+      {
+        "line": 10,
+        "name": "Failed login with invalid password",
+        "description": "",
+        "id": "user-authentication;failed-login",
+        "type": "scenario",
+        "keyword": "Scenario",
+        "start_timestamp": "2025-12-27T10:00:05.000Z",
+        "tags": [
+          {"name": "@negative"},
+          {"name": "@TC-PROJ-C2"}
+        ],
+        "steps": [
+          {
+            "line": 11,
+            "name": "I am on the login page",
+            "keyword": "Given ",
+            "result": {
+              "duration": 1123456,
+              "status": "passed"
+            }
+          },
+          {
+            "line": 12,
+            "name": "I enter invalid password",
+            "keyword": "When ",
+            "result": {
+              "duration": 2234567,
+              "status": "passed"
+            }
+          },
+          {
+            "line": 13,
+            "name": "I should see an error message",
+            "keyword": "Then ",
+            "result": {
+              "duration": 345678,
+              "status": "failed",
+              "error_message": "Expected error message not found"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
+

@@ -11,16 +11,14 @@
     <packaging>jar</packaging>
 
     <name>Vansah Cucumber Integration</name>
-    <description>Integration between Cucumber Framework and Vansah Test Management</description>
+    <description>Cucumber test framework with Vansah API import (Xray-style)</description>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cucumber.version>7.18.0</cucumber.version>
         <junit.version>4.13.2</junit.version>
-        <unirest.version>1.4.9</unirest.version>
-        <commons-lang.version>3.14.0</commons-lang.version>
     </properties>
 
     <dependencies>
@@ -44,25 +42,6 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- Vansah API Dependencies -->
-        <dependency>
-            <groupId>com.mashape.unirest</groupId>
-            <artifactId>unirest-java</artifactId>
-            <version>${unirest.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${commons-lang.version}</version>
-        </dependency>
-
-        <!-- Environment Variables -->
-        <dependency>
-            <groupId>io.github.cdimascio</groupId>
-            <artifactId>dotenv-java</artifactId>
-            <version>3.0.0</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -72,8 +51,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>8</source>
-                    <target>8</target>
+                    <source>11</source>
+                    <target>11</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>

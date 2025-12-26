@@ -1,0 +1,50 @@
+name: Example Cucumber Tests with Vansah
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Run Cucumber Tests
+        run: mvn clean test -Dcucumber.plugin="json:target/cucumber-report.json"
+
+      - name: Upload Results to Vansah
+        if: always()
+        uses: ./.github/actions/vansah-cucumber-action
+        with:
+          token: ${{ secrets.VANSAH_TOKEN }}
+          project: PROJ
+          report-path: target/cucumber-report.json
+          test-folder: Automation/Cucumber
+          sprint: Sprint 5
+          environment: CI
+
+      - name: Upload Test Report as Artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cucumber-report
+          path: target/cucumber-report.json
+
