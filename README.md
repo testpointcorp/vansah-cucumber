@@ -1,7 +1,7 @@
 # Vansah Cucumber Integration
 
 <p align="center">
-  <img src="assets/vansah-logo.png" alt="Vansah Logo" width="200">
+  <img src="https://camo.githubusercontent.com/e61a5aa89c4c62feb8067fffdfa47f99ec134e6d938822501728198a3ffbdee9/68747470733a2f2f76616e7361682e636f6d2f6170702f6c6f676f2f76616e7361686a6972612d6c6f676f2e737667" alt="Vansah Logo" width="200">
 </p>
 
 Import Cucumber test results to **Vansah Test Management** via API.
