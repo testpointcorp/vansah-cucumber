@@ -8,7 +8,7 @@ import io.cucumber.junit.CucumberOptions;
 /**
  * Cucumber Test Runner - Generates JSON report for Vansah import.
  * 
- * Workflow (Xray-style):
+ * Workflow:
  * 1. Run: mvn test
  * 2. Import: npx vansah-cucumber-import -r target/cucumber-reports/cucumber.json [options]
  */

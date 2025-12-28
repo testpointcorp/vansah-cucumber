@@ -5,7 +5,6 @@
 # Usage: ./import_results.sh [report_path]
 #
 # Imports Cucumber JSON results to Vansah Test Management.
-# Similar to Xray's import approach.
 # =============================================================================
 
 set -e

@@ -11,7 +11,7 @@
     <packaging>jar</packaging>
 
     <name>Vansah Cucumber Integration</name>
-    <description>Cucumber test framework with Vansah API import (Xray-style)</description>
+    <description>Cucumber test framework with Vansah API import</description>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

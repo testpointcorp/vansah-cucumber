@@ -4,7 +4,7 @@
   <img src="assets/vansah-logo.png" alt="Vansah Logo" width="200">
 </p>
 
-Import Cucumber test results to **Vansah Test Management** - simple API import approach (like Xray).
+Import Cucumber test results to **Vansah Test Management** via API.
 
 ## Overview
 
@@ -133,6 +133,35 @@ pipeline {
 }
 ```
 
+### Bitbucket Pipelines
+
+```yaml
+image: maven:3.8-openjdk-11
+
+pipelines:
+  default:
+    - step:
+        name: Run Tests
+        caches:
+          - maven
+        script:
+          - mvn test
+        artifacts:
+          - target/cucumber-reports/**
+
+    - step:
+        name: Import to Vansah
+        script:
+          - apt-get update && apt-get install -y jq
+          - ./import_results.sh
+```
+
+Set these repository variables in Bitbucket:
+- `VANSAH_TOKEN` (secured)
+- `VANSAH_PROJECT_KEY`
+- `VANSAH_URL`
+- `TEST_FOLDER_PATH`
+
 ## API Endpoint
 
 ```
@@ -163,13 +192,6 @@ The script sends the Cucumber JSON report directly to Vansah's API.
 ├── env.example          ← Config template
 └── README.md
 ```
-
-## Migration from Xray
-
-| Xray | Vansah |
-|------|--------|
-| `@XRAY-123` | `@TC-SCRUM-C1` |
-| `import_results_cloud.sh` | `import_results.sh` |
 
 ## Requirements
 
