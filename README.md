@@ -168,14 +168,6 @@ POST /api/v1/cucumber/import
 
 The script sends the Cucumber JSON report directly to Vansah's API.
 
-## Data Residency
-
-| Region | URL |
-|--------|-----|
-| US (default) | `https://prod.vansah.com` |
-| Australia | `https://prodau.vansah.com` |
-| Europe | `https://prodeu.vansah.com` |
-
 ## Project Structure
 
 ```
