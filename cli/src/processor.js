@@ -106,7 +106,15 @@ function processScenario(scenario, featureName, options) {
 
   // Add optional fields only if they have values
   if (featureName) testRun.featureName = featureName;
-  if (scenario.steps?.length > 0) testRun.stepCount = scenario.steps.length;
+  if (scenario.steps?.length > 0) {
+    testRun.stepCount = scenario.steps.length;
+    
+    // Build actual result from steps
+    const stepsSummary = scenario.steps.map((step, idx) => 
+      `${idx + 1}. ${step.keyword}${step.name} - ${step.result.status.toUpperCase()}`
+    ).join('\n');
+    testRun.actualResult = `Cucumber Test Execution:\n${stepsSummary}`;
+  }
   
   const duration = calculateTotalDuration(scenario.steps);
   if (duration > 0) testRun.duration = duration;
