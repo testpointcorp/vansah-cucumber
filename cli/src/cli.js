@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const { program } = require('commander');
-const { processCucumberReport, sendToVansah } = require('./processor');
+const { processCucumberReport, sendToVansah, uploadAllAttachments } = require('./processor');
 
 program
   .name('vansah-cucumber-import')
@@ -58,10 +58,22 @@ async function main() {
     console.log('\n📤 Uploading to Vansah API...');
     const response = await sendToVansah(results, options);
 
-    // 4. Display results
-    displayResults(response);
+    // 4. Upload attachments if any exist
+    let attachmentResults = null;
+    const embeddingsCount = results.testRuns.reduce((count, tr) => 
+      count + (tr.embeddings?.length || 0), 0
+    );
+    
+    if (embeddingsCount > 0) {
+      console.log(`\n📎 Uploading ${embeddingsCount} attachment(s)...`);
+      attachmentResults = await uploadAllAttachments(response.testRuns, options);
+      console.log(`✓ Uploaded: ${attachmentResults.uploaded}, Failed: ${attachmentResults.failed}`);
+    }
 
-    // 5. Exit
+    // 5. Display results
+    displayResults(response, attachmentResults);
+
+    // 6. Exit
     const hasErrors = (response.failed > 0) || (response.errors && response.errors.length > 0);
     process.exit(hasErrors ? 1 : 0);
 
@@ -74,7 +86,7 @@ async function main() {
   }
 }
 
-function displayResults(results) {
+function displayResults(results, attachmentResults) {
   console.log('\n' + '═'.repeat(60));
   console.log('  VANSAH CUCUMBER IMPORT RESULTS');
   console.log('═'.repeat(60));
@@ -83,6 +95,10 @@ function displayResults(results) {
   console.log(`  ✅ Imported: ${results.imported}`);
   console.log(`  ❌ Failed:   ${results.failed}`);
   console.log(`  ⏭️  Skipped:  ${results.skipped}`);
+  
+  if (attachmentResults) {
+    console.log(`  📎 Attachments: ${attachmentResults.uploaded} uploaded, ${attachmentResults.failed} failed`);
+  }
 
   if (results.testRuns && results.testRuns.length > 0) {
     console.log('\n📋 Test Runs Created:');
@@ -105,6 +121,19 @@ function displayResults(results) {
     console.log('\n❌ Errors:');
     results.errors.forEach(e => {
       console.log(`  - ${e.scenario}: ${e.error}`);
+    });
+  }
+
+  // Display attachment details if verbose
+  if (attachmentResults && attachmentResults.details.length > 0) {
+    console.log('\n📎 Attachment Details:');
+    attachmentResults.details.forEach(d => {
+      const statusEmoji = d.success ? '✅' : '❌';
+      const levelInfo = d.level === 'step' ? ` (Step: ${d.stepName})` : ' (Scenario)';
+      console.log(`  ${statusEmoji} ${d.testCaseKey}: ${d.name}${levelInfo}`);
+      if (!d.success && d.error) {
+        console.log(`     Error: ${d.error}`);
+      }
     });
   }
 

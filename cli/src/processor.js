@@ -1,4 +1,5 @@
 const axios = require('axios');
+const FormData = require('form-data');
 
 /**
  * Extract test case key from scenario tags
@@ -79,6 +80,64 @@ function findFailedStepIndex(steps) {
 }
 
 /**
+ * Extract embeddings (attachments) from scenario and steps
+ */
+function extractEmbeddings(scenario) {
+  const embeddings = [];
+  
+  // Check scenario-level embeddings
+  if (scenario.embeddings && Array.isArray(scenario.embeddings)) {
+    for (const embed of scenario.embeddings) {
+      embeddings.push({
+        data: embed.data,
+        mimeType: embed.mime_type || 'application/octet-stream',
+        name: embed.name || generateAttachmentName(embed.mime_type, embeddings.length),
+        level: 'scenario'
+      });
+    }
+  }
+  
+  // Check step-level embeddings
+  if (scenario.steps) {
+    scenario.steps.forEach((step, stepIndex) => {
+      if (step.embeddings && Array.isArray(step.embeddings)) {
+        for (const embed of step.embeddings) {
+          embeddings.push({
+            data: embed.data,
+            mimeType: embed.mime_type || 'application/octet-stream',
+            name: embed.name || generateAttachmentName(embed.mime_type, embeddings.length),
+            level: 'step',
+            stepIndex: stepIndex + 1,
+            stepName: `${step.keyword}${step.name}`
+          });
+        }
+      }
+    });
+  }
+  
+  return embeddings;
+}
+
+/**
+ * Generate attachment name based on MIME type
+ */
+function generateAttachmentName(mimeType, index) {
+  const extensions = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'text/plain': 'txt',
+    'text/html': 'html',
+    'application/json': 'json',
+    'application/pdf': 'pdf'
+  };
+  
+  const ext = extensions[mimeType] || 'bin';
+  return `attachment_${index + 1}.${ext}`;
+}
+
+/**
  * Process single scenario
  */
 function processScenario(scenario, featureName, options) {
@@ -122,6 +181,12 @@ function processScenario(scenario, featureName, options) {
   if (failedStep) testRun.failedStep = failedStep;
   if (scenario.start_timestamp) testRun.timestamp = scenario.start_timestamp;
   if (options.stepLevel && scenario.steps) testRun.steps = scenario.steps;
+
+  // Extract embeddings (screenshots, logs, etc.) if present
+  const embeddings = extractEmbeddings(scenario);
+  if (embeddings.length > 0) {
+    testRun.embeddings = embeddings;
+  }
 
   return testRun;
 }
@@ -221,11 +286,93 @@ async function sendToVansah(results, options) {
   }
 }
 
+/**
+ * Upload attachment to a test run
+ */
+async function uploadAttachment(runKey, embedding, options) {
+  const form = new FormData();
+  
+  // Decode base64 to buffer
+  const buffer = Buffer.from(embedding.data, 'base64');
+  
+  // Append file to form
+  form.append('file', buffer, {
+    filename: embedding.name,
+    contentType: embedding.mimeType
+  });
+
+  try {
+    const response = await axios.post(
+      `${options.apiUrl}/api/v1/run/${runKey}/attachment`,
+      form,
+      {
+        headers: {
+          'Authorization': options.token,
+          ...form.getHeaders()
+        },
+        timeout: 60000
+      }
+    );
+
+    return {
+      success: true,
+      name: embedding.name,
+      level: embedding.level,
+      stepName: embedding.stepName
+    };
+  } catch (error) {
+    const message = error.response?.data?.message || error.message;
+    return {
+      success: false,
+      name: embedding.name,
+      error: message
+    };
+  }
+}
+
+/**
+ * Upload all attachments for test runs
+ */
+async function uploadAllAttachments(testRuns, options) {
+  const results = {
+    uploaded: 0,
+    failed: 0,
+    details: []
+  };
+
+  for (const testRun of testRuns) {
+    if (!testRun.testRunId || !testRun.embeddings || testRun.embeddings.length === 0) {
+      continue;
+    }
+
+    for (const embedding of testRun.embeddings) {
+      const result = await uploadAttachment(testRun.testRunId, embedding, options);
+      
+      if (result.success) {
+        results.uploaded++;
+      } else {
+        results.failed++;
+      }
+      
+      results.details.push({
+        testCaseKey: testRun.testCaseKey,
+        testRunId: testRun.testRunId,
+        ...result
+      });
+    }
+  }
+
+  return results;
+}
+
 module.exports = {
   extractTestCaseKey,
   determineScenarioResult,
   mapStatusToVansahCode,
+  extractEmbeddings,
   processCucumberReport,
-  sendToVansah
+  sendToVansah,
+  uploadAttachment,
+  uploadAllAttachments
 };
 

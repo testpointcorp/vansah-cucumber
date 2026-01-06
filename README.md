@@ -72,6 +72,49 @@ TEST_FOLDER_PATH=SCRUM/Test Repository
 | `@TESTCASE-{KEY}` | `@TESTCASE-SCRUM-C1` |
 | `@{KEY}` | `@SCRUM-C1` |
 
+## Screenshots & Attachments
+
+To attach screenshots to your Vansah test runs, embed them in your step definitions using `scenario.attach()`:
+
+### 1. Add Scenario parameter to your step
+
+```java
+import io.cucumber.java.Scenario;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+
+@Then("I verify the dashboard")
+public void iVerifyTheDashboard(Scenario scenario) {
+    // Your test logic...
+    
+    // Capture and attach screenshot
+    byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+    scenario.attach(screenshot, "image/png", "dashboard.png");
+}
+```
+
+### 2. Import results (attachments uploaded automatically)
+
+```bash
+npx vansah-cucumber-import \
+  -r target/cucumber-reports/cucumber.json \
+  -t $VANSAH_TOKEN \
+  -p $PROJECT_KEY \
+  -f "Test Folder"
+```
+
+Attachments are detected and uploaded automatically if present in the JSON report.
+
+### Supported attachment types
+
+| MIME Type | Use Case |
+|-----------|----------|
+| `image/png` | Screenshots |
+| `image/jpeg` | Screenshots |
+| `text/plain` | Logs, text output |
+| `text/html` | Page source |
+| `application/json` | API responses |
+
 ## CI/CD Integration
 
 ### GitHub Actions
@@ -168,6 +211,29 @@ POST /api/v1/cucumber/import
 
 The script sends the Cucumber JSON report directly to Vansah's API.
 
+## CLI Options
+
+```bash
+npx vansah-cucumber-import [options]
+
+Options:
+  -r, --report <path>      Path to Cucumber JSON report (required)
+  -t, --token <token>      Vansah API token (required)
+  -p, --project <key>      Jira project key (required)
+  -f, --folder <path>      Test folder path in Vansah
+  -i, --issue <key>        Jira issue key
+  -a, --atp <key>          Advanced Test Plan key
+  -s, --stp <key>          Standard Test Plan key
+  --sprint <name>          Sprint name
+  --release <name>         Release name
+  --environment <name>     Environment name
+  --step-level             Enable step-level reporting
+  --api-url <url>          Vansah API URL (default: https://prodau.vansah.com)
+  -v, --verbose            Verbose output
+```
+
+**Note:** Attachments (screenshots, logs) embedded in the Cucumber JSON are automatically detected and uploaded.
+
 ## Project Structure
 
 ```
@@ -177,9 +243,13 @@ The script sends the Cucumber JSON report directly to Vansah's API.
 │   │   └── steps/ExampleSteps.java
 │   └── resources/features/
 │       └── example.feature
+├── cli/                   ← Node.js CLI tool
+│   └── src/
+│       ├── cli.js
+│       └── processor.js
 ├── pom.xml
-├── import_results.sh    ← Import script
-├── env.example          ← Config template
+├── import_results.sh      ← Import script
+├── env.example            ← Config template
 └── README.md
 ```
 
