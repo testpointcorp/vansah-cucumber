@@ -169,7 +169,16 @@ Options:
 
 ## CI/CD Integration
 
+> **Ready-to-use example files** are available in the [`ci-examples/`](ci-examples/) directory:
+> - [GitHub Actions workflow](ci-examples/github-actions-cucumber.yml) — copy to `.github/workflows/`
+> - [Jenkinsfile](ci-examples/Jenkinsfile) — copy to repository root
+> - [Bitbucket Pipelines](ci-examples/bitbucket-pipelines.yml) — copy to repository root
+>
+> These files include detailed comments on required secrets/variables and won't auto-run from their current location.
+
 ### GitHub Actions
+
+Copy [`ci-examples/github-actions-cucumber.yml`](ci-examples/github-actions-cucumber.yml) to `.github/workflows/cucumber-tests.yml`, or use the snippet below:
 
 ```yaml
 name: Cucumber Tests
@@ -202,6 +211,8 @@ jobs:
 
 ### Jenkins
 
+Copy [`ci-examples/Jenkinsfile`](ci-examples/Jenkinsfile) to your repository root, or use the snippet below:
+
 ```groovy
 pipeline {
     agent any
@@ -227,6 +238,8 @@ pipeline {
 ```
 
 ### Bitbucket Pipelines
+
+Copy [`ci-examples/bitbucket-pipelines.yml`](ci-examples/bitbucket-pipelines.yml) to your repository root, or use the snippet below:
 
 ```yaml
 image: maven:3.8-openjdk-11
@@ -268,6 +281,10 @@ Set these repository variables in Bitbucket:
 │   └── src/
 │       ├── cli.js
 │       └── processor.js
+├── ci-examples/           ← CI/CD pipeline templates
+│   ├── github-actions-cucumber.yml
+│   ├── Jenkinsfile
+│   └── bitbucket-pipelines.yml
 ├── pom.xml
 ├── import_results.sh      ← Import script
 ├── env.example            ← Config template
