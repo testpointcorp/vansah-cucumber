@@ -5,13 +5,13 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.testpoint</groupId>
-    <artifactId>vansah-cucumber-integration</artifactId>
+    <groupId>com.vansah</groupId>
+    <artifactId>vansah-cucumber-java-integration</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>Vansah Cucumber Integration</name>
-    <description>Cucumber test framework with Vansah API import</description>
+    <description>Vansah Cucumber integration enables teams to write Gherkin-based automated tests in Cucumber, execute them using Java, and sync results back to Vansah for requirement coverage, traceability, and reporting. This integration supports both Vansah-managed and Git-managed feature workflows and fits seamlessly into CI/CD pipelines.</description>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

@@ -16,7 +16,7 @@
     "test-management",
     "jira"
   ],
-  "author": "Testpoint",
+  "author": "vansah",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.0",
