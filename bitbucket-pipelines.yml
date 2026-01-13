@@ -1,0 +1,86 @@
+# =============================================================================
+# Bitbucket Pipelines - Cucumber Tests with Vansah Import (EXAMPLE)
+# =============================================================================
+#
+# This is an EXAMPLE pipeline file. To use it:
+#   1. Copy this file to your repository root as: bitbucket-pipelines.yml
+#   2. Configure the required repository variables in Bitbucket
+#
+# REQUIRED REPOSITORY VARIABLES (Repository settings > Pipelines > Repository variables):
+#   - VANSAH_TOKEN: Your Vansah API token (mark as "Secured" to hide value)
+#   - VANSAH_PROJECT_KEY: Your Jira project key (e.g., "SCRUM")
+#   - VANSAH_URL: Vansah API URL (e.g., "https://prod.vansah.com")
+#   - TEST_FOLDER_PATH: Test folder path in Vansah (e.g., "SCRUM/Test Repository")
+#
+# OPTIONAL REPOSITORY VARIABLES:
+#   - JIRA_ISSUE_KEY: Link test runs to a specific Jira issue
+#   - SPRINT_NAME: Associate with a sprint
+#   - RELEASE_NAME: Associate with a release
+#   - ENVIRONMENT_NAME: Specify test environment (e.g., "UAT", "Production")
+#
+# =============================================================================
+
+image: maven:3.9-eclipse-temurin-11
+
+definitions:
+  caches:
+    maven: ~/.m2/repository
+
+pipelines:
+  default:
+    - step:
+        name: Run Cucumber Tests
+        caches:
+          - maven
+        script:
+          - mvn test || true  # Continue even if tests fail
+        artifacts:
+          - target/cucumber-reports/**
+
+    - step:
+        name: Import Results to Vansah
+        script:
+          # Install jq for JSON processing
+          - apt-get update && apt-get install -y jq
+          
+          # Run the import script
+          - chmod +x ./import_results.sh
+          - ./import_results.sh
+
+  # Optional: Run only on specific branches
+  branches:
+    main:
+      - step:
+          name: Run Cucumber Tests
+          caches:
+            - maven
+          script:
+            - mvn test || true
+          artifacts:
+            - target/cucumber-reports/**
+
+      - step:
+          name: Import Results to Vansah
+          script:
+            - apt-get update && apt-get install -y jq
+            - chmod +x ./import_results.sh
+            - ./import_results.sh
+
+  # Optional: Manual trigger for custom pipelines
+  custom:
+    run-tests-and-import:
+      - step:
+          name: Run Cucumber Tests
+          caches:
+            - maven
+          script:
+            - mvn test || true
+          artifacts:
+            - target/cucumber-reports/**
+
+      - step:
+          name: Import Results to Vansah
+          script:
+            - apt-get update && apt-get install -y jq
+            - chmod +x ./import_results.sh
+            - ./import_results.sh
