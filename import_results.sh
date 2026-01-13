@@ -1,10 +1,10 @@
 #!/bin/bash
 # =============================================================================
-# Vansah Cucumber Results Import
+# Vansah Cucumber Results Import (Form-Data)
 # =============================================================================
 # Usage: ./import_results.sh [report_path]
 #
-# Imports Cucumber JSON results to Vansah Test Management.
+# Uploads Cucumber JSON report to Vansah Test Management via multipart form-data.
 # =============================================================================
 
 set -e
@@ -40,7 +40,7 @@ if [ ! -f "$REPORT_PATH" ]; then
 fi
 
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║           VANSAH CUCUMBER RESULTS IMPORT                     ║"
+echo "║        VANSAH CUCUMBER RESULTS IMPORT (Form-Data)           ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 echo "📄 Report:  $REPORT_PATH"
@@ -48,88 +48,29 @@ echo "🔗 API:     $VANSAH_URL"
 echo "📁 Project: $VANSAH_PROJECT_KEY"
 echo ""
 
-# Process Cucumber report and extract test runs
-echo "🔍 Processing Cucumber report..."
-
-TEST_RUNS=$(jq '
-  [.[] | .elements[]? | 
-    # Extract test case key from tags
-    (.tags // []) as $tags |
-    ([$tags[].name | 
-      # Pattern: @TC-XXX-CYYY or @TESTCASE-XXX-CYYY or @XXX-CYYY
-      if startswith("@TC-") then .[4:]
-      elif startswith("@TESTCASE-") then .[10:]
-      elif test("^@[A-Z]+-C[0-9]+$") then .[1:]
-      else null end
-    ] | map(select(. != null)) | first // null) as $testCaseKey |
-    
-    # Only process if we have a test case key
-    select($testCaseKey != null) |
-    
-    # Determine status from steps
-    (if (.steps // []) | length == 0 then "PASSED"
-     elif [.steps[].result.status] | any(. == "failed" or . == "skipped") then "FAILED"
-     else "PASSED" end) as $status |
-    
-    # Result code: 2 = PASSED, 1 = FAILED
-    (if $status == "PASSED" then 2 else 1 end) as $resultCode |
-    
-    # Build step summary for actualResult
-    (if (.steps // []) | length > 0 then
-      "Cucumber Test Execution:\n" + ([.steps | to_entries[] | "\(.key + 1). \(.value.keyword)\(.value.name) - \(.value.result.status | ascii_upcase)"] | join("\n"))
-    else null end) as $actualResult |
-    
-    # Build test run object
-    {
-      testCaseKey: $testCaseKey,
-      scenarioName: .name,
-      status: $status,
-      resultCode: $resultCode
-    } + 
-    (if $actualResult then {actualResult: $actualResult} else {} end)
-  ]
-' "$REPORT_PATH")
-
-# Count test runs
-TEST_COUNT=$(echo "$TEST_RUNS" | jq 'length')
-echo "✓ Found $TEST_COUNT test case(s) with valid tags"
-
-if [ "$TEST_COUNT" -eq 0 ]; then
-    echo ""
-    echo "⚠️  No test cases found with Vansah tags (@TC-XXX-CYY or @XXX-CYY)"
-    echo "   Make sure your scenarios have tags like @TD-C95"
-    exit 0
-fi
-
-# Build request body - only include non-empty optional fields
-REQUEST_BODY=$(jq -n \
-    --arg projectKey "$VANSAH_PROJECT_KEY" \
-    --arg testFolderPath "${TEST_FOLDER_PATH:-}" \
-    --arg jiraIssueKey "${JIRA_ISSUE_KEY:-}" \
-    --arg sprintName "${SPRINT_NAME:-}" \
-    --arg releaseName "${RELEASE_NAME:-}" \
-    --arg environmentName "${ENVIRONMENT_NAME:-}" \
-    --argjson testRuns "$TEST_RUNS" \
-    '{
-        projectKey: $projectKey,
-        testRuns: $testRuns
-    } + 
-    (if $testFolderPath != "" then {testFolderPath: $testFolderPath} else {} end) +
-    (if $jiraIssueKey != "" then {jiraIssueKey: $jiraIssueKey} else {} end) +
-    (if $sprintName != "" then {sprintName: $sprintName} else {} end) +
-    (if $releaseName != "" then {releaseName: $releaseName} else {} end) +
-    (if $environmentName != "" then {environmentName: $environmentName} else {} end)')
-
-# Send to Vansah API
-echo ""
-echo "📤 Uploading to Vansah..."
+# Build curl command with form-data
+echo "📤 Uploading Cucumber report to Vansah..."
 echo ""
 
-RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "${VANSAH_URL}/api/v1/cucumber/import" \
-    -H "Authorization: ${VANSAH_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "$REQUEST_BODY")
+# Start building curl arguments
+CURL_ARGS=(
+    -s -w "\n%{http_code}"
+    -X POST "${VANSAH_URL}/api/v1/cucumber/import"
+    -H "Authorization: ${VANSAH_TOKEN}"
+    -F "Testformat=Cucumber_json"
+    -F "Testpath=@${REPORT_PATH};type=application/json"
+    -F "projectKey=${VANSAH_PROJECT_KEY}"
+)
+
+# Add optional fields if set
+[ -n "${TEST_FOLDER_PATH:-}" ] && CURL_ARGS+=(-F "testFolderPath=${TEST_FOLDER_PATH}")
+[ -n "${JIRA_ISSUE_KEY:-}" ] && CURL_ARGS+=(-F "jiraIssueKey=${JIRA_ISSUE_KEY}")
+[ -n "${SPRINT_NAME:-}" ] && CURL_ARGS+=(-F "sprintName=${SPRINT_NAME}")
+[ -n "${RELEASE_NAME:-}" ] && CURL_ARGS+=(-F "releaseName=${RELEASE_NAME}")
+[ -n "${ENVIRONMENT_NAME:-}" ] && CURL_ARGS+=(-F "environmentName=${ENVIRONMENT_NAME}")
+
+# Execute request
+RESPONSE=$(curl "${CURL_ARGS[@]}")
 
 # Parse response
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
