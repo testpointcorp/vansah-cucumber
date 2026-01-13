@@ -24,11 +24,6 @@ if [ -z "$VANSAH_TOKEN" ]; then
     exit 1
 fi
 
-if [ -z "$VANSAH_PROJECT_KEY" ]; then
-    echo "❌ Error: VANSAH_PROJECT_KEY not set"
-    exit 1
-fi
-
 # Set defaults
 VANSAH_URL="${VANSAH_URL:-https://prod.vansah.com}"
 
@@ -45,7 +40,6 @@ echo "╚═══════════════════════�
 echo ""
 echo "📄 Report:  $REPORT_PATH"
 echo "🔗 API:     $VANSAH_URL"
-echo "📁 Project: $VANSAH_PROJECT_KEY"
 echo ""
 
 # Build curl command with form-data
@@ -59,7 +53,6 @@ CURL_ARGS=(
     -H "Authorization: ${VANSAH_TOKEN}"
     -F "Testformat=Cucumber_json"
     -F "Testpath=@${REPORT_PATH};type=application/json"
-    -F "projectKey=${VANSAH_PROJECT_KEY}"
 )
 
 # Add optional fields if set
