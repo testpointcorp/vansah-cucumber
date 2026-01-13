@@ -1,10 +1,10 @@
 #!/bin/bash
 # =============================================================================
-# Vansah Cucumber Results Import
+# Vansah Cucumber Results Import (Form-Data)
 # =============================================================================
 # Usage: ./import_results.sh [report_path]
 #
-# Imports Cucumber JSON results to Vansah Test Management.
+# Uploads Cucumber JSON report to Vansah Test Management via multipart form-data.
 # =============================================================================
 
 set -e
@@ -24,11 +24,6 @@ if [ -z "$VANSAH_TOKEN" ]; then
     exit 1
 fi
 
-if [ -z "$VANSAH_PROJECT_KEY" ]; then
-    echo "❌ Error: VANSAH_PROJECT_KEY not set"
-    exit 1
-fi
-
 # Set defaults
 VANSAH_URL="${VANSAH_URL:-https://prod.vansah.com}"
 
@@ -40,42 +35,35 @@ if [ ! -f "$REPORT_PATH" ]; then
 fi
 
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║           VANSAH CUCUMBER RESULTS IMPORT                     ║"
+echo "║        VANSAH CUCUMBER RESULTS IMPORT (Form-Data)           ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 echo "📄 Report:  $REPORT_PATH"
 echo "🔗 API:     $VANSAH_URL"
-echo "📁 Project: $VANSAH_PROJECT_KEY"
 echo ""
 
-# Build request body
-REQUEST_BODY=$(jq -n \
-    --arg projectKey "$VANSAH_PROJECT_KEY" \
-    --arg testFolderPath "${TEST_FOLDER_PATH:-}" \
-    --arg jiraIssueKey "${JIRA_ISSUE_KEY:-}" \
-    --arg sprintName "${SPRINT_NAME:-}" \
-    --arg releaseName "${RELEASE_NAME:-}" \
-    --arg environmentName "${ENVIRONMENT_NAME:-}" \
-    --slurpfile report "$REPORT_PATH" \
-    '{
-        projectKey: $projectKey,
-        testFolderPath: (if $testFolderPath == "" then null else $testFolderPath end),
-        jiraIssueKey: (if $jiraIssueKey == "" then null else $jiraIssueKey end),
-        sprintName: (if $sprintName == "" then null else $sprintName end),
-        releaseName: (if $releaseName == "" then null else $releaseName end),
-        environmentName: (if $environmentName == "" then null else $environmentName end),
-        cucumberReport: $report[0]
-    }')
-
-# Send to Vansah API
-echo "📤 Uploading to Vansah..."
+# Build curl command with form-data
+echo "📤 Uploading Cucumber report to Vansah..."
 echo ""
 
-RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "${VANSAH_URL}/api/v1/cucumber/import" \
-    -H "Authorization: Bearer ${VANSAH_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "$REQUEST_BODY")
+# Start building curl arguments
+CURL_ARGS=(
+    -s -w "\n%{http_code}"
+    -X POST "${VANSAH_URL}/api/v1/cucumber/import"
+    -H "Authorization: ${VANSAH_TOKEN}"
+    -F "Testformat=Cucumber_json"
+    -F "Testpath=@${REPORT_PATH};type=application/json"
+)
+
+# Add optional fields if set
+[ -n "${TEST_FOLDER_PATH:-}" ] && CURL_ARGS+=(-F "testFolderPath=${TEST_FOLDER_PATH}")
+[ -n "${JIRA_ISSUE_KEY:-}" ] && CURL_ARGS+=(-F "jiraIssueKey=${JIRA_ISSUE_KEY}")
+[ -n "${SPRINT_NAME:-}" ] && CURL_ARGS+=(-F "sprintName=${SPRINT_NAME}")
+[ -n "${RELEASE_NAME:-}" ] && CURL_ARGS+=(-F "releaseName=${RELEASE_NAME}")
+[ -n "${ENVIRONMENT_NAME:-}" ] && CURL_ARGS+=(-F "environmentName=${ENVIRONMENT_NAME}")
+
+# Execute request
+RESPONSE=$(curl "${CURL_ARGS[@]}")
 
 # Parse response
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
@@ -94,4 +82,3 @@ fi
 
 echo ""
 echo "══════════════════════════════════════════════════════════════════"
-
