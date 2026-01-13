@@ -1,0 +1,110 @@
+// =============================================================================
+// Jenkins Pipeline - Cucumber Tests with Vansah Import (EXAMPLE)
+// =============================================================================
+//
+// This is an EXAMPLE Jenkinsfile. To use it:
+//   1. Copy this file to your repository root as: Jenkinsfile
+//   2. Configure the required credentials and parameters in Jenkins
+//
+// REQUIRED CREDENTIALS (Manage Jenkins > Credentials):
+//   - vansah-token: Secret text containing your Vansah API token
+//
+// REQUIRED ENVIRONMENT VARIABLES (can be set as Jenkins parameters or hardcoded):
+//   - VANSAH_PROJECT_KEY: Your Jira project key (e.g., "SCRUM")
+//   - VANSAH_URL: Vansah API URL (e.g., "https://prod.vansah.com")
+//   - TEST_FOLDER_PATH: Test folder path in Vansah (e.g., "SCRUM/Test Repository")
+//
+// OPTIONAL ENVIRONMENT VARIABLES:
+//   - JIRA_ISSUE_KEY: Link test runs to a specific Jira issue
+//   - SPRINT_NAME: Associate with a sprint
+//   - RELEASE_NAME: Associate with a release
+//   - ENVIRONMENT_NAME: Specify test environment (e.g., "UAT", "Production")
+//
+// =============================================================================
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven 3'      // Configure in: Manage Jenkins > Tools > Maven
+        jdk 'JDK 11'         // Configure in: Manage Jenkins > Tools > JDK
+    }
+
+    parameters {
+        string(name: 'VANSAH_PROJECT_KEY', defaultValue: 'SCRUM', description: 'Jira project key')
+        string(name: 'VANSAH_URL', defaultValue: 'https://prod.vansah.com', description: 'Vansah API URL')
+        string(name: 'TEST_FOLDER_PATH', defaultValue: 'SCRUM/Test Repository', description: 'Test folder path in Vansah')
+        string(name: 'ENVIRONMENT_NAME', defaultValue: '', description: 'Optional: Environment name (e.g., UAT, Production)')
+        string(name: 'SPRINT_NAME', defaultValue: '', description: 'Optional: Sprint name')
+        string(name: 'RELEASE_NAME', defaultValue: '', description: 'Optional: Release name')
+    }
+
+    environment {
+        VANSAH_TOKEN = credentials('vansah-token')  // Secret text credential
+        VANSAH_PROJECT_KEY = "${params.VANSAH_PROJECT_KEY}"
+        VANSAH_URL = "${params.VANSAH_URL}"
+        TEST_FOLDER_PATH = "${params.TEST_FOLDER_PATH}"
+        ENVIRONMENT_NAME = "${params.ENVIRONMENT_NAME}"
+        SPRINT_NAME = "${params.SPRINT_NAME}"
+        RELEASE_NAME = "${params.RELEASE_NAME}"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Run Cucumber Tests') {
+            steps {
+                sh 'mvn clean test'
+            }
+            post {
+                always {
+                    // Archive test reports regardless of test outcome
+                    archiveArtifacts artifacts: 'target/cucumber-reports/**', allowEmptyArchive: true
+                    junit 'target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Import Results to Vansah') {
+            steps {
+                sh '''
+                    # Ensure jq is available
+                    if ! command -v jq &> /dev/null; then
+                        echo "Installing jq..."
+                        apt-get update && apt-get install -y jq || yum install -y jq
+                    fi
+                    
+                    # Run import script
+                    chmod +x ./import_results.sh
+                    ./import_results.sh
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline completed successfully! Test results imported to Vansah.'
+        }
+        failure {
+            echo '❌ Pipeline failed. Check the logs for details.'
+        }
+        always {
+            // Clean up workspace (optional)
+            cleanWs(cleanWhenNotBuilt: false,
+                    deleteDirs: true,
+                    disableDeferredWipeout: true,
+                    notFailBuild: true)
+        }
+    }
+}
