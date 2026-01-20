@@ -14,7 +14,9 @@ REPORT_PATH="${1:-target/cucumber-reports/cucumber.json}"
 
 # Load .env if exists
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    source .env
+    set +a
 fi
 
 # Validate required variables
@@ -26,6 +28,19 @@ fi
 
 if [ -z "$VANSAH_PROJECT_KEY" ]; then
     echo "❌ Error: VANSAH_PROJECT_KEY not set"
+    exit 1
+fi
+
+# Validate at least one context asset is provided
+if [ -z "${TEST_FOLDER_PATH:-}" ] && [ -z "${JIRA_ISSUE_KEY:-}" ] && [ -z "${STANDARD_TEST_PLAN_KEY:-}" ] && [ -z "${ADVANCED_TEST_PLAN_KEY:-}" ]; then
+    echo "❌ Error: At least one context asset is required"
+    echo "   Set one of: TEST_FOLDER_PATH, JIRA_ISSUE_KEY, STANDARD_TEST_PLAN_KEY, or ADVANCED_TEST_PLAN_KEY"
+    exit 1
+fi
+
+# Validate advancedTestPlanKey requirements
+if [ -n "${ADVANCED_TEST_PLAN_KEY:-}" ] && [ -z "${TEST_FOLDER_PATH:-}" ] && [ -z "${JIRA_ISSUE_KEY:-}" ]; then
+    echo "❌ Error: When using ADVANCED_TEST_PLAN_KEY, you must also provide TEST_FOLDER_PATH or JIRA_ISSUE_KEY"
     exit 1
 fi
 
@@ -51,8 +66,15 @@ echo ""
 # Process Cucumber report and extract test runs
 echo "🔍 Processing Cucumber report..."
 
-TEST_RUNS=$(jq '
-  [.[] | .elements[]? | 
+# Get current timestamp in ISO8601 format
+CURRENT_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+TEST_RUNS=$(jq --arg timestamp "$CURRENT_TIMESTAMP" '
+  # First, create a map of feature names by extracting from top-level elements
+  . as $root |
+  [.[] | 
+    .name as $featureName |
+    .elements[]? | 
     # Extract test case key from tags
     (.tags // []) as $tags |
     ([$tags[].name | 
@@ -74,18 +96,26 @@ TEST_RUNS=$(jq '
     # Result code: 2 = PASSED, 1 = FAILED
     (if $status == "PASSED" then 2 else 1 end) as $resultCode |
     
+    # Calculate total duration from steps (in nanoseconds)
+    (if (.steps // []) | length > 0 then
+      [.steps[].result.duration // 0] | add
+    else 0 end) as $duration |
+    
     # Build step summary for actualResult
     (if (.steps // []) | length > 0 then
       "Cucumber Test Execution:\n" + ([.steps | to_entries[] | "\(.key + 1). \(.value.keyword)\(.value.name) - \(.value.result.status | ascii_upcase)"] | join("\n"))
     else null end) as $actualResult |
     
-    # Build test run object
+    # Build test run object with all required fields
     {
       testCaseKey: $testCaseKey,
       scenarioName: .name,
       status: $status,
-      resultCode: $resultCode
+      resultCode: $resultCode,
+      timestamp: $timestamp
     } + 
+    (if $featureName and $featureName != "" then {featureName: $featureName} else {} end) +
+    (if $duration > 0 then {duration: $duration} else {} end) +
     (if $actualResult then {actualResult: $actualResult} else {} end)
   ]
 ' "$REPORT_PATH")
@@ -106,6 +136,8 @@ REQUEST_BODY=$(jq -n \
     --arg projectKey "$VANSAH_PROJECT_KEY" \
     --arg testFolderPath "${TEST_FOLDER_PATH:-}" \
     --arg jiraIssueKey "${JIRA_ISSUE_KEY:-}" \
+    --arg standardTestPlanKey "${STANDARD_TEST_PLAN_KEY:-}" \
+    --arg advancedTestPlanKey "${ADVANCED_TEST_PLAN_KEY:-}" \
     --arg sprintName "${SPRINT_NAME:-}" \
     --arg releaseName "${RELEASE_NAME:-}" \
     --arg environmentName "${ENVIRONMENT_NAME:-}" \
@@ -114,8 +146,10 @@ REQUEST_BODY=$(jq -n \
         projectKey: $projectKey,
         testRuns: $testRuns
     } + 
-    (if $testFolderPath != "" then {testFolderPath: $testFolderPath} else {} end) +
     (if $jiraIssueKey != "" then {jiraIssueKey: $jiraIssueKey} else {} end) +
+    (if $testFolderPath != "" then {testFolderPath: $testFolderPath} else {} end) +
+    (if $standardTestPlanKey != "" then {standardTestPlanKey: $standardTestPlanKey} else {} end) +
+    (if $advancedTestPlanKey != "" then {advancedTestPlanKey: $advancedTestPlanKey} else {} end) +
     (if $sprintName != "" then {sprintName: $sprintName} else {} end) +
     (if $releaseName != "" then {releaseName: $releaseName} else {} end) +
     (if $environmentName != "" then {environmentName: $environmentName} else {} end)')
@@ -148,4 +182,3 @@ fi
 
 echo ""
 echo "══════════════════════════════════════════════════════════════════"
-
