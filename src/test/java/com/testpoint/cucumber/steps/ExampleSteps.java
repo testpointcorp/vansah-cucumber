@@ -40,4 +40,34 @@ public class ExampleSteps {
         // throw new AssertionError("Expected error occurred");
         System.out.println("Error handling verified");
     }
+
+    @Given("I have another scenario")
+    public void iHaveAnotherScenario() {
+        System.out.println("Setting up another test scenario...");
+    }
+
+    @When("I perform another action")
+    public void iPerformAnotherAction() {
+        System.out.println("Performing another action...");
+    }
+
+    @Then("I verify another result")
+    public void iVerifyAnotherResult() {
+        System.out.println("Verifying another result - PASSED");
+    }
+
+    @Given("I have a third scenario")
+    public void iHaveAThirdScenario() {
+        System.out.println("Setting up third test scenario...");
+    }
+
+    @When("I perform a third action")
+    public void iPerformAThirdAction() {
+        System.out.println("Performing third action...");
+    }
+
+    @Then("I verify third result")
+    public void iVerifyThirdResult() {
+        System.out.println("Verifying third result - PASSED");
+    }
 }

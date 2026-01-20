@@ -90,7 +90,7 @@ TEST_RUNS=$(jq --arg timestamp "$CURRENT_TIMESTAMP" '
     
     # Determine status from steps
     (if (.steps // []) | length == 0 then "PASSED"
-     elif [.steps[].result.status] | any(. == "failed" or . == "skipped") then "FAILED"
+     elif [.steps[].result.status] | any(. == "failed" or . == "skipped" or . == "undefined" or . == "pending") then "FAILED"
      else "PASSED" end) as $status |
     
     # Result code: 2 = PASSED, 1 = FAILED
