@@ -101,9 +101,16 @@ TEST_RUNS=$(jq --arg timestamp "$CURRENT_TIMESTAMP" '
       [.steps[].result.duration // 0] | add
     else 0 end) as $duration |
     
+    # Extract error message from failed steps (if any)
+    (if (.steps // []) | length > 0 then
+      [.steps[] | select(.result.status == "failed") | .result.error_message // empty] | first // null
+    else null end) as $errorMessage |
+
     # Build step summary for actualResult
     (if (.steps // []) | length > 0 then
-      "Cucumber Test Execution:\n" + ([.steps | to_entries[] | "\(.key + 1). \(.value.keyword)\(.value.name) - \(.value.result.status | ascii_upcase)"] | join("\n"))
+      "Cucumber Test Execution:\n" +
+      ([.steps | to_entries[] | "\(.key + 1). \(.value.keyword)\(.value.name) - \(.value.result.status | ascii_upcase)"] | join("\n")) +
+      (if $errorMessage then "\n\nError:\n" + $errorMessage else "" end)
     else null end) as $actualResult |
     
     # Build test run object with all required fields
