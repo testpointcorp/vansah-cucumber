@@ -1,0 +1,82 @@
+# =============================================================================
+# GitHub Actions - Cucumber Tests with Vansah Import (EXAMPLE)
+# =============================================================================
+# 
+# This is an EXAMPLE workflow file. To use it:
+#   1. Copy this file to: .github/workflows/cucumber-tests.yml
+#   2. Configure the required secrets and variables in your GitHub repository
+#
+# REQUIRED SECRETS (Settings > Secrets and variables > Actions > Secrets):
+#   - VANSAH_TOKEN: Your Vansah API token (keep this secret!)
+#
+# REQUIRED VARIABLES (Settings > Secrets and variables > Actions > Variables):
+#   - VANSAH_PROJECT_KEY: Your Jira project key (e.g., "SCRUM")
+#   - VANSAH_URL: Vansah API URL (e.g., "https://prod.vansah.com")
+#   - TEST_FOLDER_PATH: Test folder path in Vansah (e.g., "SCRUM/Test Repository")
+#
+# OPTIONAL VARIABLES:
+#   - JIRA_ISSUE_KEY: Link test runs to a specific Jira issue
+#   - SPRINT_NAME: Associate with a sprint
+#   - RELEASE_NAME: Associate with a release
+#   - ENVIRONMENT_NAME: Specify test environment (e.g., "UAT", "Production")
+#
+# =============================================================================
+
+name: Cucumber Tests with Vansah Import
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  test-and-import:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+      
+      - name: Install Maven
+        run: |
+          if ! command -v mvn &> /dev/null; then
+            apt-get update && apt-get install -y maven
+          fi
+
+      - name: Run Cucumber Tests
+        run: mvn test
+        continue-on-error: true  # Continue to import even if tests fail
+      
+      - name: Install jq
+        run: sudo apt-get install -y jq
+      
+      - name: Import Results to Vansah
+        env:
+          VANSAH_TOKEN: ${{ secrets.VANSAH_TOKEN }}
+          VANSAH_PROJECT_KEY: ${{ vars.VANSAH_PROJECT_KEY }}
+          VANSAH_URL: ${{ vars.VANSAH_URL }}
+          TEST_FOLDER_PATH: ${{ vars.TEST_FOLDER_PATH }}
+          # Optional variables - uncomment and configure as needed:
+          # JIRA_ISSUE_KEY: ${{ vars.JIRA_ISSUE_KEY }}
+          # SPRINT_NAME: ${{ vars.SPRINT_NAME }}
+          # RELEASE_NAME: ${{ vars.RELEASE_NAME }}
+          # ENVIRONMENT_NAME: ${{ vars.ENVIRONMENT_NAME }}
+        run: ./import_results.sh
+      
+      - name: Upload Cucumber Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cucumber-reports
+          path: target/cucumber-reports/
+          retention-days: 30
+
