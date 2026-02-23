@@ -9,7 +9,7 @@
 // REQUIRED CREDENTIALS (Manage Jenkins > Credentials):
 //   - vansah-token: Secret text containing your Vansah API token
 //
-// REQUIRED ENVIRONMENT VARIABLES (can be set as Jenkins parameters or hardcoded):
+// REQUIRED ENVIRONMENT VARIABLES (Manage Jenkins > System > Global properties > Environment variables):
 //   - VANSAH_PROJECT_KEY: Your Jira project key (e.g., "SCRUM")
 //   - VANSAH_URL: Vansah API URL (e.g., "https://prod.vansah.com")
 //   - TEST_FOLDER_PATH: Test folder path in Vansah (e.g., "SCRUM/Test Repository")
@@ -30,23 +30,12 @@ pipeline {
         jdk 'JDK 11'         // Configure in: Manage Jenkins > Tools > JDK
     }
 
-    parameters {
-        string(name: 'VANSAH_PROJECT_KEY', defaultValue: 'SCRUM', description: 'Jira project key')
-        string(name: 'VANSAH_URL', defaultValue: 'https://prod.vansah.com', description: 'Vansah API URL')
-        string(name: 'TEST_FOLDER_PATH', defaultValue: 'SCRUM/Test Repository', description: 'Test folder path in Vansah')
-        string(name: 'ENVIRONMENT_NAME', defaultValue: '', description: 'Optional: Environment name (e.g., UAT, Production)')
-        string(name: 'SPRINT_NAME', defaultValue: '', description: 'Optional: Sprint name')
-        string(name: 'RELEASE_NAME', defaultValue: '', description: 'Optional: Release name')
-    }
-
     environment {
         VANSAH_TOKEN = credentials('vansah-token')  // Secret text credential
-        VANSAH_PROJECT_KEY = "${params.VANSAH_PROJECT_KEY}"
-        VANSAH_URL = "${params.VANSAH_URL}"
-        TEST_FOLDER_PATH = "${params.TEST_FOLDER_PATH}"
-        ENVIRONMENT_NAME = "${params.ENVIRONMENT_NAME}"
-        SPRINT_NAME = "${params.SPRINT_NAME}"
-        RELEASE_NAME = "${params.RELEASE_NAME}"
+        // Required - configure in: Manage Jenkins > System > Global properties > Environment variables
+        // Or override per-job in: Job > Configure > General > "This project is parameterized"
+        // VANSAH_PROJECT_KEY, VANSAH_URL, TEST_FOLDER_PATH must be set as Jenkins env vars
+        // Optional: JIRA_ISSUE_KEY, SPRINT_NAME, RELEASE_NAME, ENVIRONMENT_NAME
     }
 
     options {
@@ -79,11 +68,11 @@ pipeline {
             steps {
                 sh '''
                     # Ensure jq is available
-                    if ! command -v jq &> /dev/null; then
+                    if ! command -v jq > /dev/null 2>&1; then
                         echo "Installing jq..."
                         apt-get update && apt-get install -y jq || yum install -y jq
                     fi
-                    
+
                     # Run import script
                     chmod +x ./import_results.sh
                     ./import_results.sh
