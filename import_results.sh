@@ -2,15 +2,22 @@
 # =============================================================================
 # Vansah Cucumber Results Import (Form-Data)
 # =============================================================================
-# Usage: ./import_results.sh [report_path]
+# Usage: ./import_results.sh [-f report_path]
 #
 # Uploads Cucumber JSON report to Vansah Test Management via multipart form-data.
 # =============================================================================
 
 set -e
 
-# Default report path
-REPORT_PATH="${1:-target/cucumber-reports/cucumber.json}"
+# Default path to the Cucumber JSON result/report file generated after running tests
+REPORT_PATH="target/cucumber-reports/cucumber.json"
+
+while getopts "f:" opt; do
+    case $opt in
+        f) REPORT_PATH="$OPTARG" ;;
+        *) echo "Usage: $0 [-f report_path]"; exit 1 ;;
+    esac
+done
 
 # Load .env if exists
 if [ -f .env ]; then
@@ -51,7 +58,7 @@ VANSAH_URL="${VANSAH_URL:-https://prod.vansah.com}"
 # Validate report exists
 if [ ! -f "$REPORT_PATH" ]; then
     echo "❌ Error: Report not found: $REPORT_PATH"
-    echo "   Run 'mvn test' first to generate the report"
+    echo "   Run your Cucumber tests first to generate the report"
     exit 1
 fi
 
@@ -71,7 +78,7 @@ echo ""
 # Start building curl arguments - Required fields
 CURL_ARGS=(
     -s -w "\n%{http_code}"
-    -X POST "${VANSAH_URL}/api/v1/cucumber/import"
+    -X POST "${VANSAH_URL}/api/v2/cucumber/import"
     -H "Authorization: ${VANSAH_TOKEN}"
     -F "Testformat=Cucumber_json"
     -F "Testpath=@${REPORT_PATH};type=application/json"
@@ -88,7 +95,6 @@ CURL_ARGS=(
 [ -n "${SPRINT_NAME:-}" ] && CURL_ARGS+=(-F "sprintName=${SPRINT_NAME}")
 [ -n "${RELEASE_NAME:-}" ] && CURL_ARGS+=(-F "releaseName=${RELEASE_NAME}")
 [ -n "${ENVIRONMENT_NAME:-}" ] && CURL_ARGS+=(-F "environmentName=${ENVIRONMENT_NAME}")
-[ -n "${STEP_LEVEL_REPORTING:-}" ] && CURL_ARGS+=(-F "stepLevelReporting=${STEP_LEVEL_REPORTING}")
 
 # Execute request
 RESPONSE=$(curl "${CURL_ARGS[@]}")
