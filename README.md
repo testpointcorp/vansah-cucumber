@@ -294,7 +294,7 @@ Set these repository variables in Bitbucket:
 ## API Endpoint
 
 ```
-POST /api/v1/cucumber/import
+POST /api/v2/cucumber/import
 ```
 
 The script sends the Cucumber JSON report directly to Vansah's API.
